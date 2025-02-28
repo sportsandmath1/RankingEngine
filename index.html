@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fuzzy Pairwise Ranking Optimizer – Global Loss Minimization</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    #input-section {
+      background: #fff;
+      margin: 0 auto 20px auto;
+      padding: 20px;
+      max-width: 600px;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    textarea {
+      width: 90%;
+      max-width: 500px;
+      height: 150px;
+      font-size: 1em;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .main-container {
+      display: flex;
+      gap: 20px;
+    }
+    .comparison-column {
+      flex: 2;
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .ranking-column {
+      flex: 1;
+      background: #eef;
+      padding: 20px;
+      border-radius: 6px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .comparison-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .item {
+      width: 40%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fafafa;
+      text-align: center;
+    }
+    .item h2 {
+      margin: 0 0 10px;
+    }
+    #comparison-symbol {
+      font-size: 2em;
+      margin: 10px;
+      width: 50px;
+      text-align: center;
+    }
+    #update-indicator {
+      font-size: 1.5em;
+      margin-top: 10px;
+      min-height: 1.5em;
+    }
+    .slider-container {
+      margin: 20px 0;
+    }
+    input[type="range"] {
+      width: 100%;
+      margin: 10px 0;
+    }
+    datalist {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 5px;
+    }
+    datalist option {
+      text-align: center;
+      font-size: 0.8em;
+    }
+    .buttons {
+      text-align: center;
+    }
+    .buttons button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 4px;
+      background: #007bff;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    .buttons button:hover {
+      background: #0056b3;
+    }
+    #ranking-list {
+      text-align: left;
+    }
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      padding: 8px;
+      border-radius: 4px;
+      transition: filter 0.2s;
+    }
+    .ranking-item:hover {
+      filter: brightness(0.95);
+    }
+    .rank-number {
+      font-weight: bold;
+      margin-right: 10px;
+      min-width: 25px;
+    }
+    .rank-bar {
+      height: 12px;
+      margin: 0 10px;
+      border-radius: 6px;
+      flex-grow: 1;
+    }
+    .rank-details {
+      font-size: 0.85em;
+      color: #666;
+    }
+    .positive {
+      color: green;
+    }
+    .negative {
+      color: red;
+    }
+    .comparison-counter {
+      background: #007bff;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      display: inline-block;
+    }
+    .progress-container {
+      width: 100%;
+      background-color: #ddd;
+      border-radius: 4px;
+      margin: 15px 0;
+    }
+    .progress-bar {
+      height: 20px;
+      border-radius: 4px;
+      background-color: #4CAF50;
+      text-align: center;
+      line-height: 20px;
+      color: white;
+      transition: width 0.3s;
+    }
+    .progress-phases {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 0.7em;
+      color: #666;
+    }
+    .progress-phase {
+      text-align: center;
+      width: 20%;
+    }
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .popup-content {
+      position: relative;
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      width: 80%;
+      max-width: 600px;
+      max-height: 70%;
+      overflow-y: auto;
+      border-radius: 6px;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    .history-left, .history-right {
+      flex: 2;
+      text-align: center;
+      padding: 10px;
+    }
+    .history-slider {
+      flex: 3;
+      text-align: center;
+    }
+    .history-slider input[type="range"] {
+      width: 90%;
+    }
+    .delete-btn {
+      margin-left: 10px;
+      padding: 5px 10px;
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background: #cc0000;
+    }
+  </style>
+</head>
+<body>
+  <div id="input-section">
+    <h1>Enter Your Items</h1>
+    <p>Type one item per line or separate by commas (e.g., NBA player names):</p>
+    <textarea id="item-list" placeholder="A, B, C, ..."></textarea>
+    <br>
+    <button id="start-btn">Start Ranking</button>
+  </div>
+  <div class="main-container" id="main-container" style="display:none;">
+    <div class="comparison-column">
+      <h2>Pairwise Comparison</h2>
+      <div class="comparison-counter" id="comparison-counter">Comparisons: 0</div>
+      <div class="progress-container">
+        <div class="progress-bar" id="progress-bar" style="width: 0%">0%</div>
+      </div>
+      <div class="progress-phases">
+        <div class="progress-phase">All Connected</div>
+        <div class="progress-phase">Moderate</div>
+        <div class="progress-phase">Close</div>
+        <div class="progress-phase">Equal</div>
+        <div class="progress-phase">Circle</div>
+      </div>
+      <div class="comparison-box">
+        <div class="item" id="itemA">
+          <h2 id="nameA"></h2>
+          <p id="ratingA"></p>
+          <p id="changeA" class="change-indicator"></p>
+        </div>
+        <div id="comparison-symbol">=</div>
+        <div class="item" id="itemB">
+          <h2 id="nameB"></h2>
+          <p id="ratingB"></p>
+          <p id="changeB" class="change-indicator"></p>
+        </div>
+      </div>
+      <div id="update-indicator"></div>
+      <div class="slider-container">
+        <input type="range" id="rating-slider" min="-3" max="3" step="1" value="0" list="tickmarks">
+        <datalist id="tickmarks">
+          <option value="-3" label=">>>"></option>
+          <option value="-2" label=">>"></option>
+          <option value="-1" label=">"></option>
+          <option value="0" label="="></option>
+          <option value="1" label="<"></option>
+          <option value="2" label="<<"></option>
+          <option value="3" label="<<<"></option>
+        </datalist>
+      </div>
+      <div class="buttons">
+        <button id="submit-comparison">Submit Comparison</button>
+        <button id="view-history">View History</button>
+      </div>
+    </div>
+    <div class="ranking-column">
+      <h2>Current Rankings</h2>
+      <div id="ranking-list"></div>
+    </div>
+  </div>
+  <div id="history-popup" class="popup">
+    <div class="popup-content">
+      <span class="close-btn" id="close-history">×</span>
+      <h2>Comparison History</h2>
+      <div id="history-list"></div>
+    </div>
+  </div>
+  <script>
+    let items = [];
+    let comparisons = [];
+    let comparedPairs = new Set();
+    const initialRating = 1500;
+    const clusterColors = ['#ffcccc', '#ccffcc', '#ccccff', '#ffffcc', '#ffccff', '#cceeff', '#ffebcc', '#e6ccff', '#ccffe6', '#ffccf2'];
+    const maxIterations = 10000;
+    const tol = 1e-6;
+    const learningRate = 1000;
+    const L_const = Math.log(10) / 400;
+    const regFactor = 1;
+    let currentStage = 0;
+
+    function getSymbol(val) {
+      switch (parseInt(val)) {
+        case -3: return ">>>";
+        case -2: return ">>";
+        case -1: return ">";
+        case 0:  return "=";
+        case 1:  return "<";
+        case 2:  return "<<";
+        case 3:  return "<<<";
+        default: return "";
+      }
+    }
+    document.getElementById("rating-slider").addEventListener("input", function(e) {
+      document.getElementById("comparison-symbol").textContent = getSymbol(e.target.value);
+    });
+
+    document.getElementById("start-btn").addEventListener("click", function() {
+      const text = document.getElementById("item-list").value;
+      const rawItems = text.split(/[\n,]+/).map(s => s.trim()).filter(s => s !== "");
+      if (rawItems.length < 2) {
+        alert("Please enter at least two items.");
+        return;
+      }
+      items = rawItems.map(name => ({
+        name: name,
+        rating: initialRating,
+        compCount: 0,
+        showDetailed: false,
+        oldRating: initialRating,
+        prevRating: initialRating
+      }));
+      document.getElementById("input-section").style.display = "none";
+      document.getElementById("main-container").style.display = "flex";
+      updateRankingDisplay();
+      nextComparison();
+    });
+
+    let currentPair = null;
+    function choosePair() {
+      const n = items.length;
+      const stage = currentStage;
+      const weight = Math.pow(2, Math.min(stage, 4));
+      let bestScore = -Infinity;
+      let bestPair = null;
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const pairKey = `${i}-${j}`;
+          if (!comparedPairs.has(pairKey)) {
+            const score = (1 / (items[i].compCount + 1) + 1 / (items[j].compCount + 1)) - weight * Math.pow((items[i].rating - items[j].rating) / 500, 2);
+            if (score > bestScore) {
+              bestScore = score;
+              bestPair = { idxA: i, idxB: j };
+            }
+          }
+        }
+      }
+      if (bestPair) {
+        return bestPair;
+      } else {
+        const idxA = Math.floor(Math.random() * n);
+        let idxB = Math.floor(Math.random() * n);
+        while (idxB === idxA) idxB = Math.floor(Math.random() * n);
+        return { idxA, idxB };
+      }
+    }
+
+    function nextComparison() {
+      items.forEach(item => item.oldRating = item.rating);
+      document.getElementById("changeA").textContent = "";
+      document.getElementById("changeB").textContent = "";
+      currentPair = choosePair();
+      document.getElementById("nameA").textContent = items[currentPair.idxA].name;
+      document.getElementById("ratingA").textContent = "Rating: " + items[currentPair.idxA].rating.toFixed(0);
+      document.getElementById("nameB").textContent = items[currentPair.idxB].name;
+      document.getElementById("ratingB").textContent = "Rating: " + items[currentPair.idxB].rating.toFixed(0);
+      document.getElementById("rating-slider").value = 0;
+      document.getElementById("comparison-symbol").textContent = "=";
+      document.getElementById("update-indicator").textContent = "";
+    }
+
+    function sliderToProbability(s) {
+      let angle = (45 - s * 15) * Math.PI / 180;
+      return Math.pow(Math.sin(angle), 2);
+    }
+
+    function computeGradients() {
+      let grads = new Array(items.length).fill(0);
+      comparisons.forEach(comp => {
+        const i = comp.idxA;
+        const j = comp.idxB;
+        const d = items[i].rating - items[j].rating;
+        const e = 1 / (1 + Math.pow(10, -d / 400));
+        const p = sliderToProbability(comp.sliderValue);
+        const grad = L_const * (e * (1 - p) - p * (1 - e));
+        grads[i] += grad;
+        grads[j] -= grad;
+      });
+      for (let i = 0; i < items.length; i++) {
+        const d_anchor = items[i].rating - initialRating;
+        const e_anchor = 1 / (1 + Math.pow(10, -d_anchor / 400));
+        grads[i] += regFactor * L_const * (e_anchor - 0.5);
+      }
+      return grads;
+    }
+
+    function optimizeRatings() {
+      let iter = 0;
+      while (iter < maxIterations) {
+        let grads = computeGradients();
+        let maxGrad = Math.max(...grads.map(g => Math.abs(g)));
+        if (maxGrad < tol) break;
+        for (let i = 0; i < items.length; i++) {
+          items[i].rating -= learningRate * grads[i];
+        }
+        iter++;
+      }
+    }
+
+    function getClusters(level) {
+      const n = items.length;
+      if (level < 4) {
+        const adjMatrix = Array(n).fill().map(() => Array(n).fill(false));
+        comparisons.forEach(comp => {
+          const i = comp.idxA;
+          const j = comp.idxB;
+          const val = Math.abs(comp.sliderValue);
+          if (val <= 3 - level) {
+            adjMatrix[i][j] = adjMatrix[j][i] = true;
+          }
+        });
+        return getConnectedComponents(adjMatrix);
+      } else {
+        const graph = Array(n).fill().map(() => []);
+        comparisons.forEach(comp => {
+          if (comp.sliderValue < 0) graph[comp.idxA].push(comp.idxB);
+          else if (comp.sliderValue > 0) graph[comp.idxB].push(comp.idxA);
+        });
+        return getSCCs(graph);
+      }
+    }
+
+    function getConnectedComponents(adjMatrix) {
+      const n = adjMatrix.length;
+      const visited = Array(n).fill(false);
+      const clusters = [];
+      function dfs(node, cluster) {
+        visited[node] = true;
+        cluster.push(node);
+        for (let i = 0; i < n; i++) {
+          if (adjMatrix[node][i] && !visited[i]) {
+            dfs(i, cluster);
+          }
+        }
+      }
+      for (let i = 0; i < n; i++) {
+        if (!visited[i]) {
+          const cluster = [];
+          dfs(i, cluster);
+          clusters.push(cluster);
+        }
+      }
+      return clusters;
+    }
+
+    function getSCCs(graph) {
+      const n = graph.length;
+      const visited = Array(n).fill(false);
+      const stack = [];
+      function dfs(node) {
+        visited[node] = true;
+        for (let neighbor of graph[node]) {
+          if (!visited[neighbor]) dfs(neighbor);
+        }
+        stack.push(node);
+      }
+      for (let i = 0; i < n; i++) {
+        if (!visited[i]) dfs(i);
+      }
+      const transpose = Array(n).fill().map(() => []);
+      for (let i = 0; i < n; i++) {
+        for (let neighbor of graph[i]) {
+          transpose[neighbor].push(i);
+        }
+      }
+      visited.fill(false);
+      const sccs = [];
+      function dfsTranspose(node, cluster) {
+        visited[node] = true;
+        cluster.push(node);
+        for (let neighbor of transpose[node]) {
+          if (!visited[neighbor]) dfsTranspose(neighbor, cluster);
+        }
+      }
+      while (stack.length > 0) {
+        const node = stack.pop();
+        if (!visited[node]) {
+          const cluster = [];
+          dfsTranspose(node, cluster);
+          sccs.push(cluster);
+        }
+      }
+      return sccs;
+    }
+
+    function checkProgressStage() {
+      const n = items.length;
+      let anyConn = Array(n).fill().map(() => Array(n).fill(false));
+      let modConn = Array(n).fill().map(() => Array(n).fill(false));
+      let closeConn = Array(n).fill().map(() => Array(n).fill(false));
+      let equalConn = Array(n).fill().map(() => Array(n).fill(false));
+      let directedGraph = Array(n).fill().map(() => []);
+
+      comparisons.forEach(comp => {
+        const i = comp.idxA;
+        const j = comp.idxB;
+        const val = comp.sliderValue;
+        anyConn[i][j] = anyConn[j][i] = true;
+        if (Math.abs(val) <= 2) modConn[i][j] = modConn[j][i] = true;
+        if (Math.abs(val) <= 1) closeConn[i][j] = closeConn[j][i] = true;
+        if (val === 0) equalConn[i][j] = equalConn[j][i] = true;
+        if (val < 0) directedGraph[i].push(j);
+        else if (val > 0) directedGraph[j].push(i);
+      });
+
+      function isConnected(adjMatrix) {
+        const visited = Array(n).fill(false);
+        function dfs(node) {
+          visited[node] = true;
+          for (let i = 0; i < n; i++) if (adjMatrix[node][i] && !visited[i]) dfs(i);
+        }
+        dfs(0);
+        return visited.every(v => v);
+      }
+
+      function hasCycle(dGraph) {
+        const visited = Array(n).fill(false);
+        const recStack = Array(n).fill(false);
+        function dfs(node) {
+          visited[node] = true;
+          recStack[node] = true;
+          for (let neighbor of dGraph[node]) {
+            if (!visited[neighbor]) {
+              if (dfs(neighbor)) return true;
+            } else if (recStack[neighbor]) return true;
+          }
+          recStack[node] = false;
+          return false;
+        }
+        for (let i = 0; i < n; i++) if (!visited[i] && dfs(i)) return true;
+        return false;
+      }
+
+      let stage = 0;
+      if (isConnected(anyConn)) {
+        stage = 1;
+        if (isConnected(modConn)) {
+          stage = 2;
+          if (isConnected(closeConn)) {
+            stage = 3;
+            if (isConnected(equalConn)) {
+              stage = 4;
+              if (hasCycle(directedGraph)) stage = 5;
+            }
+          }
+        }
+      }
+      return stage;
+    }
+
+    function updateProgressBar(stage) {
+      if (stage > currentStage) {
+        currentStage = stage;
+        const percent = stage * 20;
+        document.getElementById("progress-bar").style.width = percent + "%";
+        document.getElementById("progress-bar").textContent = percent + "%";
+      }
+    }
+
+    document.getElementById("submit-comparison").addEventListener("click", function() {
+      const sliderVal = parseInt(document.getElementById("rating-slider").value);
+      const oldDiff = items[currentPair.idxA].rating - items[currentPair.idxB].rating;
+
+      comparisons.push({ idxA: currentPair.idxA, idxB: currentPair.idxB, sliderValue: sliderVal });
+      items[currentPair.idxA].compCount++;
+      items[currentPair.idxB].compCount++;
+      const pairKey = `${Math.min(currentPair.idxA, currentPair.idxB)}-${Math.max(currentPair.idxA, currentPair.idxB)}`;
+      comparedPairs.add(pairKey);
+      document.getElementById("comparison-counter").textContent = `Comparisons: ${comparisons.length}`;
+
+      items.forEach(item => item.prevRating = item.rating);
+      optimizeRatings();
+
+      const newDiff = items[currentPair.idxA].rating - items[currentPair.idxB].rating;
+      const delta = newDiff - oldDiff;
+      const indicator = document.getElementById("update-indicator");
+      indicator.textContent = (delta >= 0 ? "+" : "") + delta.toFixed(0);
+      indicator.className = delta >= 0 ? "positive" : "negative";
+
+      document.getElementById("ratingA").textContent = "Rating: " + items[currentPair.idxA].rating.toFixed(0);
+      document.getElementById("ratingB").textContent = "Rating: " + items[currentPair.idxB].rating.toFixed(0);
+
+      const changeA = items[currentPair.idxA].rating - items[currentPair.idxA].oldRating;
+      const changeB = items[currentPair.idxB].rating - items[currentPair.idxB].oldRating;
+      if (Math.abs(changeA) >= 0.5) {
+        document.getElementById("changeA").textContent = (changeA > 0 ? "+" : "") + Math.round(changeA);
+        document.getElementById("changeA").className = changeA >= 0 ? "positive" : "negative";
+      }
+      if (Math.abs(changeB) >= 0.5) {
+        document.getElementById("changeB").textContent = (changeB > 0 ? "+" : "") + Math.round(changeB);
+        document.getElementById("changeB").className = changeB >= 0 ? "positive" : "negative";
+      }
+
+      const newStage = checkProgressStage();
+      updateProgressBar(newStage);
+      updateRankingDisplay();
+      nextComparison();
+    });
+
+    function updateRankingDisplay() {
+      const sorted = items.slice().sort((a, b) => b.rating - a.rating);
+      const minRating = Math.min(...items.map(item => item.rating));
+      const maxRating = Math.max(...items.map(item => item.rating));
+      const clusters = currentStage >= 1 ? getClusters(Math.min(currentStage, 4)) : [];
+      const clusterMap = {};
+      clusters.forEach((cluster, index) => {
+        const color = clusterColors[index % clusterColors.length];
+        cluster.forEach(idx => {
+          clusterMap[idx] = color;
+        });
+      });
+
+      let html = "";
+      sorted.forEach((item, index) => {
+        const barWidth = maxRating === minRating ? 100 : 50 + (item.rating - minRating) / (maxRating - minRating) * 150;
+        let barColor;
+        if (item.rating <= 1500) {
+          const t = maxRating === minRating ? 0.5 : (item.rating - minRating) / (1500 - minRating);
+          const g = Math.floor(255 * t);
+          barColor = `rgb(255, ${g}, 0)`;
+        } else {
+          const t = maxRating === minRating ? 0.5 : (item.rating - 1500) / (maxRating - 1500);
+          const r = Math.floor(255 * (1 - t));
+          barColor = `rgb(${r}, 255, 0)`;
+        }
+
+        const ratingDisplay = item.showDetailed ? item.rating.toFixed(2) : item.rating.toFixed(0);
+        const delta = item.rating - item.prevRating;
+        const changeHtml = Math.abs(delta) >= 0.5 ? `<span class="rank-change ${delta >= 0 ? 'positive' : 'negative'}">${delta >= 0 ? '+' : ''}${Math.round(delta)}</span>` : '';
+        const clusterColor = clusterMap[items.indexOf(item)] || '#fff';
+        html += `
+          <div class="ranking-item" data-idx="${items.indexOf(item)}" style="background-color: ${clusterColor};">
+            <span class="rank-number">${index + 1}.</span>
+            <span class="rank-name">${item.name}</span>
+            <div class="rank-bar" style="width: ${barWidth}px; background-color: ${barColor};"></div>
+            <span class="rank-details">Rating: <span class="rating-value">${ratingDisplay}</span> ${changeHtml} (${item.compCount})</span>
+          </div>
+        `;
+      });
+
+      document.getElementById("ranking-list").innerHTML = html;
+    }
+
+    document.getElementById("ranking-list").addEventListener("click", function(event) {
+      const rankingItem = event.target.closest(".ranking-item");
+      if (rankingItem) {
+        const idx = parseInt(rankingItem.dataset.idx);
+        items[idx].showDetailed = !items[idx].showDetailed;
+        const ratingSpan = rankingItem.querySelector(".rating-value");
+        ratingSpan.textContent = items[idx].showDetailed ? items[idx].rating.toFixed(2) : items[idx].rating.toFixed(0);
+      }
+    });
+
+    document.getElementById("view-history").addEventListener("click", function() {
+      const historyList = document.getElementById("history-list");
+      historyList.innerHTML = "";
+      comparisons.forEach((comp, index) => {
+        const itemA = items[comp.idxA].name;
+        const itemB = items[comp.idxB].name;
+        const sliderVal = comp.sliderValue;
+        const historyItem = `
+          <div class="history-item" data-index="${index}">
+            <div class="history-left">${itemA}</div>
+            <div class="history-slider">
+              <input type="range" class="history-slider-input" min="-3" max="3" step="1" value="${sliderVal}">
+              <datalist id="tickmarks-${index}">
+                <option value="-3" label=">>>"></option>
+                <option value="-2" label=">>"></option>
+                <option value="-1" label=">"></option>
+                <option value="0" label="="></option>
+                <option value="1" label="<"></option>
+                <option value="2" label="<<"></option>
+                <option value="3" label="<<<"></option>
+              </datalist>
+            </div>
+            <div class="history-right">${itemB}</div>
+            <button class="delete-btn">Delete</button>
+          </div>
+        `;
+        historyList.innerHTML += historyItem;
+      });
+      document.getElementById("history-popup").style.display = "block";
+
+      document.querySelectorAll('.history-slider-input').forEach(slider => {
+        slider.addEventListener('change', function() {
+          const index = parseInt(this.parentElement.parentElement.dataset.index);
+          comparisons[index].sliderValue = parseInt(this.value);
+          items.forEach(item => item.prevRating = item.rating);
+          optimizeRatings();
+          updateRankingDisplay();
+          const newStage = checkProgressStage();
+          updateProgressBar(newStage);
+        });
+      });
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to delete this comparison?')) {
+            const index = parseInt(this.parentElement.dataset.index);
+            const comp = comparisons[index];
+            const pairKey = `${Math.min(comp.idxA, comp.idxB)}-${Math.max(comp.idxA, comp.idxB)}`;
+            comparedPairs.delete(pairKey);
+            comparisons.splice(index, 1);
+            items[comp.idxA].compCount--;
+            items[comp.idxB].compCount--;
+            items.forEach(item => item.prevRating = item.rating);
+            optimizeRatings();
+            updateRankingDisplay();
+            const newStage = checkProgressStage();
+            updateProgressBar(newStage);
+            document.getElementById("view-history").click();
+          }
+        });
+      });
+    });
+
+    document.getElementById("close-history").addEventListener("click", function() {
+      document.getElementById("history-popup").style.display = "none";
+    });
+  </script>
+</body>
+</html>
